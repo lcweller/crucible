@@ -1,8 +1,8 @@
 # Built binaries
 /bin/
 /dist/
-crucible
-crucible.exe
+/crucible
+/crucible.exe
 *.exe
 
 # Go build / test artifacts
