@@ -1,0 +1,68 @@
+# Built binaries
+/bin/
+/dist/
+crucible
+crucible.exe
+*.exe
+
+# Go build / test artifacts
+*.test
+*.out
+*.prof
+*.trace
+coverage.txt
+coverage.html
+profile.cov
+cpu.pprof
+mem.pprof
+block.pprof
+mutex.pprof
+
+# Go module cache shouldn't be in repo, but vendor/ might be added later
+/vendor/
+
+# IDE / editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Local environment
+.env
+.env.local
+.envrc
+
+# Local Crucible run output
+/out/
+/tmp/
+/run/
+report.json
+report.md
+report.pdf
+summary.txt
+crucible-*.log
+
+# Run-local SQLite databases (should only exist under /var/tmp/ or %TEMP%, but
+# guard against accidental copies into the repo during development)
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# CI scratch
+/.cache/
+/.golangci-cache/
+
+# Generated docs / SBOM artifacts (committed builds, not source)
+/sbom/
+/*.spdx.json
+/*.cdx.json
+
+# OS junk
+.AppleDouble
+.LSOverride
+ehthumbs.db
+desktop.ini

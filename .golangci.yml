@@ -1,0 +1,224 @@
+# golangci-lint configuration for Crucible.
+# Strict, opinionated, kept in sync with CLAUDE.md §3 and §8.
+# Run: golangci-lint run ./...
+
+run:
+  timeout: 5m
+  tests: true
+  modules-download-mode: readonly
+  go: "1.23"
+  build-tags:
+    - integration
+
+output:
+  formats:
+    - format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true
+  sort-results: true
+
+linters:
+  disable-all: true
+  enable:
+    # Correctness
+    - govet
+    - staticcheck
+    - errcheck
+    - ineffassign
+    - unused
+    - typecheck
+    - bodyclose
+    - rowserrcheck
+    - sqlclosecheck
+    - nilerr
+    - nilnil
+    - errorlint
+    - exhaustive
+    - contextcheck
+    - noctx
+    - durationcheck
+    - asasalint
+    - asciicheck
+    - bidichk
+    # Style / consistency
+    - gofmt
+    - goimports
+    - gci
+    - gosimple
+    - revive
+    - stylecheck
+    - unconvert
+    - unparam
+    - whitespace
+    - misspell
+    - goconst
+    # Complexity / size
+    - gocognit
+    - gocyclo
+    - funlen
+    - nestif
+    - maintidx
+    # Security
+    - gosec
+    # Forbidding bad patterns
+    - forbidigo
+    - depguard
+    - gocritic
+    - prealloc
+    - copyloopvar
+    - intrange
+    # Test hygiene
+    - testifylint
+    - tparallel
+    - paralleltest
+    - thelper
+
+linters-settings:
+  govet:
+    enable-all: true
+    disable:
+      - fieldalignment  # noisy on struct ergonomics; revisit later
+
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+
+  staticcheck:
+    checks: ["all"]
+
+  gosec:
+    excludes:
+      - G104  # handled by errcheck
+      - G304  # file path opens are gated through internal/storage with controlled paths
+
+  exhaustive:
+    default-signifies-exhaustive: true
+
+  gocognit:
+    min-complexity: 25
+
+  gocyclo:
+    min-complexity: 15
+
+  funlen:
+    lines: 120
+    statements: 60
+
+  nestif:
+    min-complexity: 5
+
+  maintidx:
+    under: 20
+
+  goconst:
+    min-len: 4
+    min-occurrences: 4
+    ignore-tests: true
+
+  misspell:
+    locale: US
+
+  revive:
+    severity: warning
+    rules:
+      - name: exported
+      - name: package-comments
+      - name: var-naming
+      - name: receiver-naming
+      - name: error-return
+      - name: error-strings
+      - name: error-naming
+      - name: if-return
+      - name: increment-decrement
+      - name: range
+      - name: time-naming
+      - name: indent-error-flow
+      - name: errorf
+      - name: empty-block
+      - name: superfluous-else
+      - name: unused-parameter
+        disabled: true  # too noisy on interface impls
+      - name: unreachable-code
+      - name: redefines-builtin-id
+
+  stylecheck:
+    checks: ["all", "-ST1000"]  # don't require package-level docs on internal/*
+
+  gci:
+    sections:
+      - standard
+      - default
+      - prefix(github.com/crucible-io/crucible)
+    skip-generated: true
+
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - performance
+      - style
+      - opinionated
+    disabled-checks:
+      - paramTypeCombine
+      - whyNoLint
+      - hugeParam  # large fingerprint structs are intentional values
+
+  forbidigo:
+    forbid:
+      - p: ^fmt\.Print(ln|f)?$
+        msg: "use log/slog instead of fmt.Print*"
+      - p: ^log\.(Print|Fatal|Panic)
+        msg: "use log/slog instead of the standard log package"
+      - p: ^panic\(
+        msg: "no panics in library code — return an error; panics are reserved for init-time invariants"
+
+  depguard:
+    rules:
+      schema-pure:
+        # pkg/schema/ is a public API surface; no internal/* leakage.
+        files:
+          - "**/pkg/schema/**"
+        deny:
+          - pkg: "github.com/crucible-io/crucible/internal"
+            desc: "pkg/schema must not depend on internal packages"
+      no-deprecated-log:
+        files:
+          - "$all"
+        deny:
+          - pkg: "log"
+            desc: "use log/slog"
+          - pkg: "io/ioutil"
+            desc: "use io and os equivalents"
+      no-cgo-sqlite:
+        files:
+          - "$all"
+        deny:
+          - pkg: "github.com/mattn/go-sqlite3"
+            desc: "use modernc.org/sqlite (pure Go) — Crucible must be CGO-free"
+
+  prealloc:
+    simple: true
+    range-loops: true
+    for-loops: true
+
+  paralleltest:
+    ignore-missing: true  # not every table-driven test needs t.Parallel
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - funlen
+        - gocognit
+        - gocyclo
+        - maintidx
+        - goconst
+        - gosec
+        - forbidigo
+        - errcheck
+        - dupl
+    - path: cmd/crucible/main\.go
+      linters:
+        - forbidigo  # main may emit terminal status; slog still preferred elsewhere
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  new: false
